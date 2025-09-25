@@ -14,11 +14,13 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setLoading(true);
+  
+    
+const handleSubmit = async (e:React.SyntheticEvent) => {
+  e.preventDefault();
+setLoading(true);
     setError('');
-
+  // ...rest of your code
     try {
       const response = await auth.login(formData.email, formData.password);
       

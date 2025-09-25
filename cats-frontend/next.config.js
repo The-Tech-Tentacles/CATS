@@ -16,14 +16,17 @@ const nextConfig = {
     ignoreDuringBuilds: false,
   },
   // API configuration
-  async rewrites() {
-    return [
-      {
-        source: '/api/:path*',
-        destination: process.env.NEXT_PUBLIC_API_URL + '/api/:path*',
-      },
-    ];
-  },
+async rewrites() {
+  if (!process.env.NEXT_PUBLIC_API_URL) {
+    throw new Error('NEXT_PUBLIC_API_URL environment variable is not set!');
+  }
+  return [
+    {
+      source: '/api/:path*',
+      destination: process.env.NEXT_PUBLIC_API_URL + '/api/:path*',
+    },
+  ];
+},
   // Environment variables
   env: {
     CUSTOM_KEY: 'cats-frontend',

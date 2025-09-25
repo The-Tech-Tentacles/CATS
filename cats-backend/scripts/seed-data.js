@@ -1,4 +1,4 @@
-const { sequelize } = require("../src/config/database");
+const { sequelize } = require("../config/database");
 const bcrypt = require("bcryptjs");
 
 async function seedInitialData() {

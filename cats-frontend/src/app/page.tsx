@@ -126,11 +126,7 @@ export default function HomePage() {
                 </svg>
               </div>
               <h3 className="mb-4 text-2xl font-bold text-slate-800">
-                शिकायत की स्थिति देखें
-                <br />
-                <span className="text-lg font-medium">
-                  Track Complaint Status
-                </span>
+                Track Complaint Status
               </h3>
               <p className="mb-6 text-lg leading-relaxed text-slate-600">
                 Check the current status and progress of your submitted
@@ -140,7 +136,7 @@ export default function HomePage() {
                 href="/auth/login"
                 className="inline-block rounded-xl bg-green-500 px-8 py-4 text-lg font-semibold text-white shadow-md transition-colors hover:bg-green-600"
               >
-                Track Status
+                {t("", "Track Satus", "hindi", "marathi")}
               </Link>
             </div>
           </div>

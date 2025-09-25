@@ -1,0 +1,17 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom CSS for CATS Frontend */
+body {
+  font-family: 'Inter', system-ui, sans-serif;
+  margin: 0;
+  padding: 0;
+}
+
+/* Test styles to verify Tailwind is working */
+.test-tailwind {
+  background-color: theme('colors.blue.500');
+  color: theme('colors.white');
+  padding: theme('spacing.4');
+}

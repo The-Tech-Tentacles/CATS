@@ -1,0 +1,188 @@
+version: '3.8'
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: cats-postgres
+    environment:
+      POSTGRES_DB: cats_db
+      POSTGRES_USER: cats_user
+      POSTGRES_PASSWORD: cats_secure_password
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-scripts:/docker-entrypoint-initdb.d
+    ports:
+      - "5432:5432"
+    networks:
+      - cats-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U cats_user -d cats_db"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: cats-redis
+    command: redis-server --appendonly yes --requirepass cats_redis_password
+    volumes:
+      - redis_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - cats-network
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "redis-cli", "--raw", "incr", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # CATS Backend Application
+  cats-backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cats-backend
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      
+      # Database Configuration
+      DB_HOST: postgres
+      DB_PORT: 5432
+      DB_NAME: cats_db
+      DB_USER: cats_user
+      DB_PASSWORD: cats_secure_password
+      DB_DIALECT: postgres
+      
+      # JWT Configuration
+      JWT_SECRET: your_super_secure_jwt_secret_key_here_minimum_32_characters_production
+      JWT_REFRESH_SECRET: your_super_secure_refresh_secret_key_here_minimum_32_characters_production
+      JWT_EXPIRES_IN: 15m
+      JWT_REFRESH_EXPIRES_IN: 7d
+      
+      # Encryption Configuration
+      ENCRYPTION_KEY: your_32_character_encryption_key_production
+      ENCRYPTION_ALGORITHM: aes-256-gcm
+      
+      # Redis Configuration
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+      REDIS_PASSWORD: cats_redis_password
+      REDIS_DB: 0
+      
+      # Security Configuration
+      BCRYPT_ROUNDS: 12
+      CORS_ORIGIN: http://localhost:3001
+      TRUST_PROXY: true
+      
+      # Rate Limiting
+      RATE_LIMIT_WINDOW_MS: 900000
+      RATE_LIMIT_MAX_REQUESTS: 100
+      
+      # File Upload Configuration
+      MAX_FILE_SIZE: 10485760
+      ALLOWED_FILE_TYPES: jpg,jpeg,png,pdf,doc,docx,txt,mp4,avi,mov
+      UPLOAD_PATH: ./uploads
+      
+      # Email Configuration (Update with your SMTP settings)
+      SMTP_HOST: smtp.gmail.com
+      SMTP_PORT: 587
+      SMTP_SECURE: false
+      SMTP_USER: your_email@domain.com
+      SMTP_PASSWORD: your_email_password
+      FROM_EMAIL: noreply@cybercrime.gov.in
+      FROM_NAME: Cyber Crime Branch
+      
+      # SMS Configuration (Update with your Twilio settings)
+      TWILIO_ACCOUNT_SID: your_twilio_account_sid
+      TWILIO_AUTH_TOKEN: your_twilio_auth_token
+      TWILIO_PHONE_NUMBER: +1234567890
+      
+      # Logging Configuration
+      LOG_LEVEL: info
+      LOG_FILE: logs/cats.log
+      LOG_MAX_SIZE: 10m
+      LOG_MAX_FILES: 5
+      
+      # Admin Configuration
+      SUPER_ADMIN_EMAIL: admin@cybercrime.gov.in
+      SUPER_ADMIN_PASSWORD: SecureAdminPassword123!
+      
+      # SLA Configuration
+      SLA_HIGH_PRIORITY: 24
+      SLA_MEDIUM_PRIORITY: 72
+      SLA_LOW_PRIORITY: 168
+      
+      # Analytics Configuration
+      ENABLE_ANALYTICS: true
+      ANALYTICS_RETENTION_DAYS: 365
+      ENABLE_PERFORMANCE_MONITORING: true
+      
+      # Backup Configuration
+      BACKUP_ENABLED: true
+      BACKUP_SCHEDULE: "0 2 * * *"
+      BACKUP_RETENTION_DAYS: 30
+      BACKUP_LOCATION: ./backups
+    
+    volumes:
+      - ./uploads:/app/uploads
+      - ./logs:/app/logs
+      - ./backups:/app/backups
+    
+    ports:
+      - "3000:3000"
+    
+    networks:
+      - cats-network
+    
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    
+    restart: unless-stopped
+    
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:3000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+  # Nginx Reverse Proxy (Optional)
+  nginx:
+    image: nginx:alpine
+    container_name: cats-nginx
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./ssl:/etc/nginx/ssl:ro
+    ports:
+      - "80:80"
+      - "443:443"
+    networks:
+      - cats-network
+    depends_on:
+      - cats-backend
+    restart: unless-stopped
+    profiles:
+      - with-nginx
+
+volumes:
+  postgres_data:
+    driver: local
+  redis_data:
+    driver: local
+
+networks:
+  cats-network:
+    driver: bridge
+    ipam:
+      config:
+        - subnet: 172.20.0.0/16
